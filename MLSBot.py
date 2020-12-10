@@ -16,8 +16,8 @@ from dotenv import load_dotenv
 of two emojis. The first is a state identifier, and the second distinguishes the MLS.
 This bot uses to below dicts to provide a painless interface for users to derive  
 emojis from known MLS codes and use emojis to find the correct server."""
-MLS_TO_EMOJI = {"test_mls_tx":emoji.emojize(':cowboy_hat_face:')}
-EMOJI_TO_REGION = {emoji.emojize(':cowboy_hat_face:'):'testing_region'}
+MLS_TO_EMOJI = {"tx_test":emoji.emojize(':cowboy_hat_face::construction:')}
+EMOJI_TO_REGION = {emoji.emojize(':cowboy_hat_face::construction:'):'testing_region'}
 REGIONS_TO_SERVERS = {"testing_region":"https://discord.gg/U6DUeVVZpu"}
 
 #These constants are MLSBot responses
@@ -28,8 +28,8 @@ Use `!mls emoji [an MLS name]` and I'll give you the two corresponding emojis.
 Use `!mls regions` and I'll list out the regions for which we have servers.
 Use `!mls server [valid region]` and I'll link you to the appropriate regional server.
 Use `!mls search [two emojis or an MLS name]` and I'll link you to the appropriate server.
-By default, I'll directly message you any info you request, but if you want it dropped in the text channel, add `gc` to the end of your command.
-Remember, I'm sensitive to spacing, so I won't respond to a command that doesn't *start with* `!mls` and have 1 space between the appropriate command terms."""
+By default, I'll directly message you any info you request, but if you want it dropped in the text channel, add `here` *to the end* of your command.
+Remember, I won't respond to a command that doesn't *start with* `!mls`"""
 REGIONS = """The valid regions are:
 testing_region
 """
@@ -43,7 +43,7 @@ client = discord.Client()
 
 #Handles a request to get an emoji from a given MLS code
 async def handle_get_emoji(message):
-    mls = message.content[10:].replace(' gc','').replace(' ','')
+    mls = message.content[5:].strip()[5:].strip().lower().replace(' here','').replace(' ','')
     if mls.lower() in MLS_TO_EMOJI:
         await send_msg(message, mls + ' corresponds to ' + MLS_TO_EMOJI[mls.lower()])
     else:
@@ -51,16 +51,16 @@ async def handle_get_emoji(message):
 
 #Handles a request to get a discord server link from a given region
 async def handle_get_server(message):
-    region = message.content[11:].replace(' gc','').replace(' ','')
-    if region in REGIONS_TO_SERVERS:
-        await send_msg(message, REGIONS_TO_SERVERS[region])
+    region = message.content[5:].strip()[6:].strip().lower().replace(' here','').replace(' ','')
+    if region.lower() in REGIONS_TO_SERVERS:
+        await send_msg(message, 'Server link: ' + REGIONS_TO_SERVERS[region.lower()])
     else:
-        await send_msg(message, "Unknown region. Use `!mls regions` to see all valid regions. Use `!mls help` to see other commands.`")
+        await send_msg(message, "Unknown region. Use `!mls regions` to see all valid regions. Use `!mls help` to see other commands.")
 
 #Handles a request to get the emoji of, region of, and server link of a MLS
 #The argument can be either a MLS code or an emoji
 async def handle_get_search(message):
-    arg = message.content[11:].replace(' gc','').replace(' ','')
+    arg = message.content[5:].strip()[6:].strip().lower().replace(' here','').replace(' ','')
     emote = ""
     if arg.lower() in MLS_TO_EMOJI:
         emote = MLS_TO_EMOJI[arg.lower()]
@@ -70,16 +70,16 @@ async def handle_get_search(message):
         region = EMOJI_TO_REGION[emote]
         if region in REGIONS_TO_SERVERS:
             await send_msg(message, 'Channel name: ' + emote + ', MLS Region: ' + region)
-            await send_msg(message, 'Server link ' + REGIONS_TO_SERVERS[region])
+            await send_msg(message, 'Server link: ' + REGIONS_TO_SERVERS[region])
         else:
             await send_msg(message, "It seems we don't have a regional server connected to that valid emoji or MLS code.")
     else: 
-        await send_msg(message, "Unknown or MLS code. Use `!mls emoji [valid MLS code]` to find a valid emoji. Find valid MLS abbreviations here https://wolfnet.com/market-coverage/.")
+        await send_msg(message, "Unknown emoji or MLS code. Use `!mls emoji [valid MLS code]` to find a valid emoji. Find valid MLS abbreviations here https://wolfnet.com/market-coverage/.")
 
 #Handles responding to a command
-#By default, the bot direct messages users responses, but adding gc to the end of a request will prompt the bot to respond in the channel the request was made in
+#By default, the bot direct messages users responses, but adding 'here' to the end of a request will prompt the bot to respond in the channel the request was made in
 async def send_msg(msg_in, msg_out):
-    if ('gc' == msg_in.content[-2:]):
+    if ('here' == msg_in.content[-4:].lower()):
         await msg_in.channel.send(msg_out)
     else:
         await msg_in.author.create_dm()
@@ -95,16 +95,16 @@ async def on_ready():
 #The bot always listens for messages, but it only responds when a message begins with !mls
 @client.event
 async def on_message(message):
-    if ('!mls' == message.content[:4]):
-        if ('help' == message.content[5:9]):
+    if ('!mls' == message.content[:4].lower()):
+        if ('help' == message.content[5:].strip()[:4].lower()):
             await send_msg(message, HELP_TEXT)
-        elif ('emoji' == message.content[5:10]):
+        elif ('emoji' == message.content[5:].strip()[:5].lower()):
             await handle_get_emoji(message)
-        elif ('regions' == message.content[5:12]):
+        elif ('regions' == message.content[5:].strip()[:7].lower()):
             await send_msg(message, REGIONS)
-        elif ('server' == message.content[5:11]):
+        elif ('server' == message.content[5:].strip()[:6].lower()):
             await handle_get_server(message)
-        elif ('search' == message.content[5:11]):
+        elif ('search' == message.content[5:].strip()[:6].lower()):
             await handle_get_search(message)
         else:
             print(f'Recieved {message.system_content}')
