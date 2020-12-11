@@ -20,9 +20,9 @@ from dotenv import load_dotenv
 of two emojis. The first is a state identifier, and the second distinguishes the MLS.
 This bot uses to below dicts to provide a painless interface for users to derive  
 emojis from known MLS codes and use emojis to find the correct server."""
-MLS_TO_EMOJI = {"tx_test":emoji.emojize(':cowboy_hat_face::construction:')}
-EMOJI_TO_REGION = {emoji.emojize(':cowboy_hat_face::construction:'):'testing_region'}
-REGIONS_TO_SERVERS = {"testing_region":"https://discord.gg/U6DUeVVZpu"}
+MLS_TO_EMOJI = {}
+EMOJI_TO_REGION = {}
+REGIONS_TO_SERVERS = {}
 
 #These constants are MLSBot responses
 HELP_TEXT ="""Hi, I'm MLSBot, and I'm here to help!
@@ -63,15 +63,28 @@ def load_regional_servers():
     with open('servers.csv') as server_file:
         reader = csv.reader(server_file, delimiter=',')
         for row in reader:
-            REGIONS_TO_SERVERS[row[0].lower().replace(' ','')] = row[1]
+            REGIONS_TO_SERVERS[row[0].strip()] = row[1]
 
 #Loads data regarding the name, symbol, and (arbitrary) region of the 50 US states + 10 Canadian provinces
 def load_state_data():
     with open('states.csv') as states_file:
         reader = csv.reader(states_file, delimiter=',')
         for row in reader:
-            REGIONS_TO_STATE[row[2].lower().replace(' ','')].append(row[0])
+            REGIONS_TO_STATE[row[2].strip()].append(row[0])
             STATE_SYMBOL_TO_NAME[row[1].lower()] = row[0]
+
+#Loads the data corresponding mls codes and emojis from mls.csv. The first two letters of each mls code are a state symbol
+def load_mls_data():
+    with open('mls.csv', encoding='utf-8') as mls_file:
+        reader = csv.reader(mls_file, delimiter=',')
+        for row in reader:
+            MLS_TO_EMOJI[row[2]] = row[3]
+            symbol = row[2][:2]
+            state = STATE_SYMBOL_TO_NAME[symbol]
+            STATE_TO_MLS[state].append(row[2])
+            for region in REGIONS_TO_STATE:
+                if state in REGIONS_TO_STATE[region]:
+                    EMOJI_TO_REGION[row[3]] = region
 
 #Handles a request to get an emoji from a given MLS code
 async def handle_get_emoji(message):
@@ -83,9 +96,9 @@ async def handle_get_emoji(message):
 
 #Handles a request to get a discord server link from a given region
 async def handle_get_server(message):
-    region = message.content[5:].strip()[6:].strip().lower().replace(' here','').replace(' ','')
+    region = message.content[5:].strip()[6:].strip().lower().replace(' here','').strip().title()
     if region.lower() in REGIONS_TO_SERVERS:
-        await send_msg(message, 'Server link: ' + REGIONS_TO_SERVERS[region.lower()])
+        await send_msg(message, 'Server link: ' + REGIONS_TO_SERVERS[region])
     else:
         await send_msg(message, "Unknown region. Use `!mls regions` to see all valid regions. Use `!mls help` to see other commands.")
 
@@ -145,6 +158,7 @@ async def on_message(message):
 #Populate the global dicts with data from input files
 load_regional_servers()
 load_state_data()
+load_mls_data()
 
 #Runs the bot. The rest of this code wouldn't mean much without this line.
 client.run(TOKEN)
