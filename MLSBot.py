@@ -63,15 +63,15 @@ def load_regional_servers():
     with open('servers.csv') as server_file:
         reader = csv.reader(server_file, delimiter=',')
         for row in reader:
-            REGIONS_TO_SERVERS[row[0]] = row[1]
+            REGIONS_TO_SERVERS[row[0].lower().replace(' ','')] = row[1]
 
 #Loads data regarding the name, symbol, and (arbitrary) region of the 50 US states + 10 Canadian provinces
 def load_state_data():
     with open('states.csv') as states_file:
         reader = csv.reader(states_file, delimiter=',')
         for row in reader:
-            REGIONS_TO_STATE[row[2]].append(row[0])
-            STATE_SYMBOL_TO_NAME[row[1]] = row[0]
+            REGIONS_TO_STATE[row[2].lower().replace(' ','')].append(row[0])
+            STATE_SYMBOL_TO_NAME[row[1].lower()] = row[0]
 
 #Handles a request to get an emoji from a given MLS code
 async def handle_get_emoji(message):
