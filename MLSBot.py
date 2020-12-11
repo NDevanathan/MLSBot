@@ -6,8 +6,12 @@ Multiple Listing Service (MLS) real estate data. Some of the key functionalities
 appropriate text channels corresponding to different MLSs and helping users navigate the servers and chennels to reach their
 desired MLS.
 """
+#Default packages
 import os
+import csv
+from collections import defaultdict
 
+#Installed packages
 import discord
 import emoji
 from dotenv import load_dotenv
@@ -31,8 +35,21 @@ Use `!mls search [two emojis or an MLS name]` and I'll link you to the appropria
 By default, I'll directly message you any info you request, but if you want it dropped in the text channel, add `here` *to the end* of your command.
 Remember, I won't respond to a command that doesn't *start with* `!mls`"""
 REGIONS = """The valid regions are:
-testing_region
-"""
+US Northwest
+US Southwest
+US Central
+US South
+US Northeast
+US East
+US Southeast
+Canada"""
+
+#Keys are state abbreviations, values are state names
+STATE_SYMBOL_TO_NAME = {}
+#Keys are regions, values are a list of state names
+REGIONS_TO_STATE = defaultdict(list)
+#Keys are states, values are a list of MLS cods
+STATE_TO_MLS = defaultdict(list)
 
 #The bot secrets are stored in a local .env file for security. No peeking :)
 load_dotenv()
@@ -40,6 +57,21 @@ TOKEN = os.getenv('DISCORD_TOKEN')
 GUILD = os.getenv('DISCORD_GUILD')
 
 client = discord.Client()
+
+#Loads server link data from a csv file. I probably could have pasted it in here, but the csv solution is cleaner.
+def load_regional_servers():
+    with open('servers.csv') as server_file:
+        reader = csv.reader(server_file, delimiter=',')
+        for row in reader:
+            REGIONS_TO_SERVERS[row[0]] = row[1]
+
+#Loads data regarding the name, symbol, and (arbitrary) region of the 50 US states + 10 Canadian provinces
+def load_state_data():
+    with open('states.csv') as states_file:
+        reader = csv.reader(states_file, delimiter=',')
+        for row in reader:
+            REGIONS_TO_STATE[row[2]].append(row[0])
+            STATE_SYMBOL_TO_NAME[row[1]] = row[0]
 
 #Handles a request to get an emoji from a given MLS code
 async def handle_get_emoji(message):
@@ -109,6 +141,10 @@ async def on_message(message):
         else:
             print(f'Recieved {message.system_content}')
             await message.channel.send("Unknown command. Use `!mls help` to see valid commands.")
+
+#Populate the global dicts with data from input files
+load_regional_servers()
+load_state_data()
 
 #Runs the bot. The rest of this code wouldn't mean much without this line.
 client.run(TOKEN)
