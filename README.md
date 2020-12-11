@@ -1,2 +1,9 @@
 # MLSBot
 This repository provides the code behind a discord bot to organize and manage discord servers that provide Multiple Listing Services data.
+# What exactly does it do?
+MLSBot provides functionality to server users and server admins
+For admins, MLSBot is capable of filling a server with channels corresponding to every relevant MLS with `!mls populate`. So long as the server is named in the format '\[anything\] - \[valid region name\]', MLSBot will create categories corresponding to every state in the region, and it will then fill each state category with text channels for every MLS in that state. MLSBot also creates some general channels for quality of life. These channels should be customized by admins, as MLSBot does not yet apply permissions to them.
+
+For users, MLSBot is a guide. An emoji naming scheme is a bit weird, so MLSBot offers conversions using `!mls emoji \[mls_code\]` whereby users can convert known MLS codes into emojis. MLSBot can also identify the regional server an MLS code will belong to using `!mls search [keyword]` where the `keyword` can be an emoji or a mls_code. All the functions MLSBot provides users can be seen with `!mls help`.
+# How to set up MLSBot?
+All the code and data behind MLSBot is shared through this repository. The only thing missing is a .env file containing `DISCORD_TOKEN=[token]`. The token I have on my local machine for running MLSBot connects to my discord account, so I'm happier not sharing it. On the bright side, it's easy to make your own, and MLSBot can run with *anyone's* bot token! Just go to https://discord.com/developers, make an application, make a bot, copy over the token, put it in a .env file, in the same directory as MLSBot.py. After that, just install the needed packages, add MLSBot to your server, and run it (preferably through console, YMMV with IDEs).
