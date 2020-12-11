@@ -54,7 +54,6 @@ STATE_TO_MLS = defaultdict(list)
 #The bot secrets are stored in a local .env file for security. No peeking :)
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
-GUILD = os.getenv('DISCORD_GUILD')
 
 client = discord.Client()
 
@@ -121,6 +120,16 @@ async def handle_get_search(message):
     else: 
         await send_msg(message, "Unknown emoji or MLS code. Use `!mls emoji [valid MLS code]` to find a valid emoji. Find valid MLS abbreviations here https://wolfnet.com/market-coverage/.")
 
+#A wrapper function for populate server that ensures the command was sent in a server channel and that the sender is a server admin
+async def handle_populate(message):
+    if (message.guild):
+        if (message.author.permissions_in(message.channel).administrator):
+            await populate_server(message)
+        else:
+            return
+    else:
+        return
+
 #Handles responding to a command
 #By default, the bot direct messages users responses, but adding 'here' to the end of a request will prompt the bot to respond in the channel the request was made in
 async def send_msg(msg_in, msg_out):
@@ -130,12 +139,40 @@ async def send_msg(msg_in, msg_out):
         await msg_in.author.create_dm()
         await msg_in.author.dm_channel.send(msg_out)
 
+#Adds general channels to a server and calls populate_mls_channels to fill each state category with relevant channels
+async def populate_server(message):
+    guild_name = message.guild.name
+    if ('-' in guild_name) and (guild_name.index('-') + 1 < len(guild_name)):
+        region = guild_name[guild_name.index('-')+1:]
+        general = await message.guild.create_category('General')
+        await general.create_text_channel('Rules')
+        await general.create_text_channel('Announcements')
+        await general.create_text_channel('Welcome')
+        await general.create_text_channel('General')
+        await general.create_text_channel('Q/A')
+        await general.create_text_channel('Bot')
+        await general.create_voice_channel('Admin Voice Room')
+        await general.create_voice_channel('Voice Room 1')
+        await general.create_voice_channel('Voice Room 2')
+        for state in REGIONS_TO_STATE[region.strip()]:
+            cat = await message.guild.create_category(state)
+            await populate_mls_channels(cat)
+
+#Adds mls channels named after emojis to every state category
+async def populate_mls_channels(cat):
+    mls_codes = STATE_TO_MLS[cat.name]
+    await cat.create_text_channel(cat.name + '-general')
+    await cat.create_text_channel(cat.name + '-bot')
+    await cat.create_voice_channel(cat.name + '-general')
+    for code in mls_codes:
+        emoji = MLS_TO_EMOJI[code]
+        await cat.create_text_channel(emoji)
+
 #Fires when the bot connects to a serevr it has joined. Exists as a dev-side tool.
 @client.event
 async def on_ready():
     for guild in client.guilds:
-        if (guild.name in GUILD):
-            print(f'{client.user} has connected to {guild.name}!')
+        print(f'{client.user} has connected to {guild.name}!')
 
 #The bot always listens for messages, but it only responds when a message begins with !mls
 @client.event
@@ -151,6 +188,8 @@ async def on_message(message):
             await handle_get_server(message)
         elif ('search' == message.content[5:].strip()[:6].lower()):
             await handle_get_search(message)
+        elif ('populate' == message.content[5:].strip()[:8].lower()):
+            await handle_populate(message)
         else:
             print(f'Recieved {message.system_content}')
             await message.channel.send("Unknown command. Use `!mls help` to see valid commands.")
