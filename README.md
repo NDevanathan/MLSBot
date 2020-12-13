@@ -1,5 +1,5 @@
 # MLSBot
-This repository provides the code behind a discord bot to organize and manage discord servers that provide Multiple Listing Services data.
+This repository provides the code behind a discord bot to organize and manage discord servers that provide Multiple Listing Services data. It was coded for a hackathon.
 # What exactly does it do?
 MLSBot provides functionality to server users and server admins
 For admins, MLSBot is capable of filling a server with channels corresponding to every relevant MLS with `!mls populate`. So long as the server is named in the format '\[anything\] - \[valid region name\]', MLSBot will create categories corresponding to every state in the region, and it will then fill each state category with text channels for every MLS in that state. MLSBot also creates some general channels for quality of life. These channels should be customized by admins, as MLSBot does not yet apply permissions to them.
